@@ -61,19 +61,27 @@
             <p id="balance">0</p>
           </div>
           <div class="stat-card">
-            <h3>Текущий месяц</h3>
-            <div class="stat-lines">
-              <p><span>Доходы</span><strong id="monthIncome">0</strong></p>
-              <p><span>Расходы</span><strong id="monthExpense">0</strong></p>
-              <p class="net"><span>Итог месяца</span><strong id="monthNet">0</strong></p>
+            <h3>Итоги периода</h3>
+            <div class="stats-switch" role="tablist" aria-label="Период статистики">
+              <button id="monthViewBtn" type="button" class="switch-btn active" role="tab" aria-selected="true">Месяц</button>
+              <button id="yearViewBtn" type="button" class="switch-btn" role="tab" aria-selected="false">Год</button>
             </div>
-          </div>
-          <div class="stat-card">
-            <h3>Текущий год</h3>
-            <div class="stat-lines">
-              <p><span>Доходы</span><strong id="yearIncome">0</strong></p>
-              <p><span>Расходы</span><strong id="yearExpense">0</strong></p>
-              <p class="net"><span>Итог года</span><strong id="yearNet">0</strong></p>
+            <div class="stats-period-layout">
+              <div class="table-wrap">
+                <table class="stats-table">
+                  <thead>
+                    <tr>
+                      <th>Показатель</th>
+                      <th>Значение</th>
+                    </tr>
+                  </thead>
+                  <tbody id="periodStatsTable"></tbody>
+                </table>
+              </div>
+              <div class="pie-wrap">
+                <canvas id="periodChart" width="260" height="260" aria-label="Круговая диаграмма доходов и расходов"></canvas>
+                <p id="chartCaption" class="chart-caption"></p>
+              </div>
             </div>
           </div>
         </div>

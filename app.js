@@ -8,6 +8,7 @@ const state = {
   entries: [],
   settings: { url: "", token: "", lastSyncAt: null },
   installPrompt: null,
+  statsView: "month",
 };
 
 const el = {
@@ -20,12 +21,11 @@ const el = {
   suggestions: document.getElementById("categorySuggestions"),
   table: document.getElementById("entriesTable"),
   balance: document.getElementById("balance"),
-  monthIncome: document.getElementById("monthIncome"),
-  monthExpense: document.getElementById("monthExpense"),
-  monthNet: document.getElementById("monthNet"),
-  yearIncome: document.getElementById("yearIncome"),
-  yearExpense: document.getElementById("yearExpense"),
-  yearNet: document.getElementById("yearNet"),
+  monthViewBtn: document.getElementById("monthViewBtn"),
+  yearViewBtn: document.getElementById("yearViewBtn"),
+  periodStatsTable: document.getElementById("periodStatsTable"),
+  periodChart: document.getElementById("periodChart"),
+  chartCaption: document.getElementById("chartCaption"),
   networkStatus: document.getElementById("networkStatus"),
   syncStatus: document.getElementById("syncStatus"),
   syncForm: document.getElementById("syncForm"),
@@ -111,19 +111,92 @@ function renderStats() {
     }
   });
 
-  const monthNet = monthIncome - monthExpense;
-  const yearNet = yearIncome - yearExpense;
-
   el.balance.textContent = formatMoney(income - expense);
-  el.monthIncome.textContent = formatMoney(monthIncome);
-  el.monthExpense.textContent = formatMoney(monthExpense);
-  el.monthNet.textContent = formatMoney(monthNet);
-  el.yearIncome.textContent = formatMoney(yearIncome);
-  el.yearExpense.textContent = formatMoney(yearExpense);
-  el.yearNet.textContent = formatMoney(yearNet);
+  const periodStats = {
+    month: { label: "месяца", income: monthIncome, expense: monthExpense, net: monthIncome - monthExpense },
+    year: { label: "года", income: yearIncome, expense: yearExpense, net: yearIncome - yearExpense },
+  };
 
-  el.monthNet.className = monthNet >= 0 ? "positive" : "negative";
-  el.yearNet.className = yearNet >= 0 ? "positive" : "negative";
+  const activePeriod = periodStats[state.statsView];
+  renderPeriodTable(activePeriod);
+  renderPeriodChart(activePeriod);
+  updateStatsSwitch();
+}
+
+function renderPeriodTable(stats) {
+  el.periodStatsTable.innerHTML = `
+    <tr>
+      <td>Доходы ${stats.label}</td>
+      <td>${formatMoney(stats.income)}</td>
+    </tr>
+    <tr>
+      <td>Расходы ${stats.label}</td>
+      <td>${formatMoney(stats.expense)}</td>
+    </tr>
+    <tr class="net-row ${stats.net >= 0 ? "positive" : "negative"}">
+      <td>Итог ${stats.label}</td>
+      <td>${formatMoney(stats.net)}</td>
+    </tr>
+  `;
+}
+
+function renderPeriodChart(stats) {
+  const canvas = el.periodChart;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const total = stats.income + stats.expense;
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const radius = 92;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#0d1628";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (total <= 0) {
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "14px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Нет данных", centerX, centerY + 4);
+    el.chartCaption.textContent = "Добавьте операции, чтобы увидеть распределение.";
+    return;
+  }
+
+  const incomeAngle = (stats.income / total) * Math.PI * 2;
+
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.fillStyle = "#22c55e";
+  ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + incomeAngle);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.fillStyle = "#ef4444";
+  ctx.arc(centerX, centerY, radius, -Math.PI / 2 + incomeAngle, -Math.PI / 2 + Math.PI * 2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#111a2f";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 52, 0, Math.PI * 2);
+  ctx.fill();
+
+  const incomePercent = Math.round((stats.income / total) * 100);
+  const expensePercent = 100 - incomePercent;
+  el.chartCaption.textContent = `Доходы: ${incomePercent}% · Расходы: ${expensePercent}%`;
+}
+
+function updateStatsSwitch() {
+  const isMonth = state.statsView === "month";
+  el.monthViewBtn.classList.toggle("active", isMonth);
+  el.yearViewBtn.classList.toggle("active", !isMonth);
+  el.monthViewBtn.setAttribute("aria-selected", String(isMonth));
+  el.yearViewBtn.setAttribute("aria-selected", String(!isMonth));
 }
 
 function renderTable() {
@@ -283,6 +356,16 @@ function attachEvents() {
   });
 
   el.syncNowBtn.addEventListener("click", () => syncWithGoogle());
+  
+  el.monthViewBtn.addEventListener("click", () => {
+    state.statsView = "month";
+    renderStats();
+  });
+
+  el.yearViewBtn.addEventListener("click", () => {
+    state.statsView = "year";
+    renderStats();
+  });
 
   window.addEventListener("online", () => {
     updateNetworkStatus();

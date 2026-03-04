@@ -69,13 +69,78 @@ button { cursor: pointer; background: var(--accent); color: #04210f; border: non
 button.ghost { background: transparent; border: 1px solid var(--muted); color: var(--text); }
 .actions { display: flex; gap: 0.6rem; }
 
-.stats-grid {
+.stats-overview {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.6rem;
+  grid-template-columns: 1.1fr 2fr;
+  gap: 0.8rem;
+}
+
+.stat-card {
+  background: #0d1628;
+  border: 1px solid rgba(156, 163, 175, 0.25);
+  border-radius: 12px;
+  padding: 0.9rem;
+}
+
+.stat-lines p { display: flex; justify-content: space-between; margin: 0.45rem 0; }
+
+.stats-switch {
+  display: inline-flex;
+  border: 1px solid rgba(156, 163, 175, 0.35);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0.8rem;
+}
+
+.switch-btn {
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 0.55rem 0.85rem;
+}
+
+.switch-btn.active {
+  background: var(--accent);
+  color: #04210f;
+}
+
+.stats-period-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(200px, 260px);
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.stats-table {
+  min-width: 0;
+}
+
+.stats-table td:last-child {
+  text-align: right;
+  font-weight: 700;
+}
+
+.net-row.positive td:last-child { color: var(--accent); }
+.net-row.negative td:last-child { color: var(--danger); }
+
+.pie-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+#periodChart {
+  width: min(260px, 100%);
+  height: auto;
+}
+
+.chart-caption {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
   text-align: center;
 }
-.stats-grid p { margin: 0.2rem 0 0; font-size: 1.2rem; font-weight: 700; }
 
 .table-wrap { overflow: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 560px; }
@@ -84,7 +149,7 @@ th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid rgba(156, 1
 .tag-expense { color: #fca5a5; }
 
 @media (max-width: 720px) {
-  .row, .stats-grid { grid-template-columns: 1fr; }
+  .row, .stats-overview, .stats-period-layout { grid-template-columns: 1fr; }
   .actions { flex-direction: column; }
   body { padding-bottom: env(safe-area-inset-bottom); }
 }

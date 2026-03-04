@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>Budget Tracker</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Budget Tracker</h1>
+        <p class="subtitle">Оффлайн учёт бюджета с автосинхронизацией в Google Sheets</p>
+      </div>
+      <button id="installBtn" class="ghost" hidden>Установить</button>
+    </header>
+
+    <main class="layout">
+      <section class="card status-card">
+        <p>Статус сети: <strong id="networkStatus">Проверка…</strong></p>
+        <p>Синхронизация: <strong id="syncStatus">Не настроена</strong></p>
+      </section>
+
+      <section class="card">
+        <h2>Новая операция</h2>
+        <form id="entryForm" class="entry-form">
+          <div class="row">
+            <label>Тип
+              <select id="type" required>
+                <option value="expense">Расход</option>
+                <option value="income">Доход</option>
+              </select>
+            </label>
+            <label>Сумма
+              <input id="amount" type="number" step="0.01" min="0" inputmode="decimal" required />
+            </label>
+          </div>
+          <div class="row">
+            <label>Категория
+              <input id="category" list="categorySuggestions" placeholder="Например: Еда" required />
+            </label>
+            <label>Дата
+              <input id="date" type="date" required />
+            </label>
+          </div>
+          <datalist id="categorySuggestions"></datalist>
+          <label>Комментарий
+            <input id="note" type="text" maxlength="140" placeholder="Опционально" />
+          </label>
+          <button type="submit">Сохранить</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Статистика</h2>
+        <div class="stats-overview">
+          <div class="stat-card stat-balance">
+            <h3>Общий баланс</h3>
+            <p id="balance">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Текущий месяц</h3>
+            <div class="stat-lines">
+              <p><span>Доходы</span><strong id="monthIncome">0</strong></p>
+              <p><span>Расходы</span><strong id="monthExpense">0</strong></p>
+              <p class="net"><span>Итог месяца</span><strong id="monthNet">0</strong></p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <h3>Текущий год</h3>
+            <div class="stat-lines">
+              <p><span>Доходы</span><strong id="yearIncome">0</strong></p>
+              <p><span>Расходы</span><strong id="yearExpense">0</strong></p>
+              <p class="net"><span>Итог года</span><strong id="yearNet">0</strong></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Настройка Google Sheets</h2>
+        <form id="syncForm" class="entry-form">
+          <label>URL Web App (Google Apps Script)
+            <input id="syncUrl" type="url" placeholder="https://script.google.com/.../exec" />
+          </label>
+          <label>Секретный токен (опционально, но рекомендуется)
+            <input id="syncToken" type="password" placeholder="my-secret-token" />
+          </label>
+          <div class="actions">
+            <button type="submit">Сохранить настройки</button>
+            <button id="syncNowBtn" type="button" class="ghost">Синхронизировать сейчас</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Последние операции</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th>Категория</th>
+                <th>Сумма</th>
+                <th>Синхр.</th>
+              </tr>
+            </thead>
+            <tbody id="entriesTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

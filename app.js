@@ -1,5 +1,6 @@
 const STORAGE_KEY = "budgetEntries.v1";
 const SETTINGS_KEY = "budgetSyncSettings.v1";
+const THEME_KEY = "budgetTheme.v1";
 const DEFAULT_CATEGORIES = [
   "Еда", "Транспорт", "Жильё", "Подписки", "Здоровье", "Одежда", "Подарки", "Развлечения", "Образование", "Зарплата", "Фриланс"
 ];
@@ -9,6 +10,8 @@ const state = {
   settings: { url: "", token: "", lastSyncAt: null },
   installPrompt: null,
   statsView: "month",
+  theme: "dark",
+  advancedStatsOpened: false,
 };
 
 const el = {
@@ -33,6 +36,13 @@ const el = {
   syncToken: document.getElementById("syncToken"),
   syncNowBtn: document.getElementById("syncNowBtn"),
   installBtn: document.getElementById("installBtn"),
+  themeSelect: document.getElementById("themeSelect"),
+  toggleAdvancedStatsBtn: document.getElementById("toggleAdvancedStatsBtn"),
+  advancedStats: document.getElementById("advancedStats"),
+  incomeCategoryChart: document.getElementById("incomeCategoryChart"),
+  expenseCategoryChart: document.getElementById("expenseCategoryChart"),
+  incomeCategoryCaption: document.getElementById("incomeCategoryCaption"),
+  expenseCategoryCaption: document.getElementById("expenseCategoryCaption"),
 };
 
 function loadState() {
@@ -43,6 +53,11 @@ function loadState() {
     lastSyncAt: null,
     ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"),
   };
+  state.theme = localStorage.getItem(THEME_KEY) || "dark";
+}
+
+function saveTheme() {
+  localStorage.setItem(THEME_KEY, state.theme);
 }
 
 function saveEntries() {
@@ -113,14 +128,39 @@ function renderStats() {
 
   el.balance.textContent = formatMoney(income - expense);
   const periodStats = {
-    month: { label: "месяца", income: monthIncome, expense: monthExpense, net: monthIncome - monthExpense },
-    year: { label: "года", income: yearIncome, expense: yearExpense, net: yearIncome - yearExpense },
+    month: {
+      label: "месяца",
+      income: monthIncome,
+      expense: monthExpense,
+      net: monthIncome - monthExpense,
+      byCategory: collectCategoryTotals((d) => d.getFullYear() === year && d.getMonth() === month),
+    },
+    year: {
+      label: "года",
+      income: yearIncome,
+      expense: yearExpense,
+      net: yearIncome - yearExpense,
+      byCategory: collectCategoryTotals((d) => d.getFullYear() === year),
+    },
   };
 
   const activePeriod = periodStats[state.statsView];
   renderPeriodTable(activePeriod);
   renderPeriodChart(activePeriod);
+  renderAdvancedStats(activePeriod);
   updateStatsSwitch();
+}
+
+function collectCategoryTotals(inPeriod) {
+  return state.entries.reduce((acc, entry) => {
+    const d = new Date(entry.date);
+    if (Number.isNaN(d.getTime()) || !inPeriod(d)) return acc;
+    const category = entry.category?.trim() || "Без категории";
+    const amount = Number(entry.amount) || 0;
+    if (!acc[entry.type]) acc[entry.type] = {};
+    acc[entry.type][category] = (acc[entry.type][category] || 0) + amount;
+    return acc;
+  }, { income: {}, expense: {} });
 }
 
 function renderPeriodTable(stats) {
@@ -189,6 +229,83 @@ function renderPeriodChart(stats) {
   const incomePercent = Math.round((stats.income / total) * 100);
   const expensePercent = 100 - incomePercent;
   el.chartCaption.textContent = `Доходы: ${incomePercent}% · Расходы: ${expensePercent}%`;
+}
+
+function renderCategoryChart(canvas, captionEl, categoryMap, emptyText, colorBase) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const entries = Object.entries(categoryMap)
+    .map(([name, amount]) => ({ name, amount: Number(amount) || 0 }))
+    .filter((item) => item.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+
+  const total = entries.reduce((sum, item) => sum + item.amount, 0);
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const radius = 80;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (total <= 0) {
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "14px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Нет данных", centerX, centerY + 4);
+    captionEl.textContent = emptyText;
+    return;
+  }
+
+  let start = -Math.PI / 2;
+  entries.forEach((item, index) => {
+    const angle = (item.amount / total) * Math.PI * 2;
+    const hueShift = (index * 27) % 70;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.fillStyle = `hsl(${colorBase + hueShift}, 70%, 55%)`;
+    ctx.arc(centerX, centerY, radius, start, start + angle);
+    ctx.closePath();
+    ctx.fill();
+    start += angle;
+  });
+
+  ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 42, 0, Math.PI * 2);
+  ctx.fill();
+
+  captionEl.textContent = entries
+    .slice(0, 3)
+    .map((item) => `${item.name}: ${Math.round((item.amount / total) * 100)}%`)
+    .join(" · ");
+}
+
+function renderAdvancedStats(stats) {
+  renderCategoryChart(
+    el.incomeCategoryChart,
+    el.incomeCategoryCaption,
+    stats.byCategory.income,
+    "Нет доходов по категориям в выбранном периоде.",
+    130
+  );
+  renderCategoryChart(
+    el.expenseCategoryChart,
+    el.expenseCategoryCaption,
+    stats.byCategory.expense,
+    "Нет расходов по категориям в выбранном периоде.",
+    350
+  );
+}
+
+function applyTheme() {
+  document.documentElement.dataset.theme = state.theme;
+  el.themeSelect.value = state.theme;
+}
+
+function toggleAdvancedStats() {
+  state.advancedStatsOpened = !state.advancedStatsOpened;
+  el.advancedStats.hidden = !state.advancedStatsOpened;
+  el.toggleAdvancedStatsBtn.textContent = state.advancedStatsOpened ? "Скрыть" : "Подробнее";
+  el.toggleAdvancedStatsBtn.setAttribute("aria-expanded", String(state.advancedStatsOpened));
 }
 
 function updateStatsSwitch() {
@@ -357,6 +474,16 @@ function attachEvents() {
 
   el.syncNowBtn.addEventListener("click", () => syncWithGoogle());
   
+  el.themeSelect.addEventListener("change", () => {
+    state.theme = el.themeSelect.value;
+    saveTheme();
+    applyTheme();
+  });
+
+  el.toggleAdvancedStatsBtn.addEventListener("click", () => {
+    toggleAdvancedStats();
+  });
+
   el.monthViewBtn.addEventListener("click", () => {
     state.statsView = "month";
     renderStats();
@@ -404,6 +531,7 @@ function registerServiceWorker() {
 
 function init() {
   loadState();
+  applyTheme();
   el.syncUrl.value = state.settings.url || "";
   el.syncToken.value = state.settings.token || "";
   attachEvents();

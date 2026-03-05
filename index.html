@@ -14,7 +14,15 @@
         <h1>Budget Tracker</h1>
         <p class="subtitle">Оффлайн учёт бюджета с автосинхронизацией в Google Sheets</p>
       </div>
-      <button id="installBtn" class="ghost" hidden>Установить</button>
+      <div class="header-actions">
+        <label class="theme-picker" for="themeSelect">Тема
+          <select id="themeSelect" aria-label="Выбор темы">
+            <option value="light">Светлая</option>
+            <option value="dark">Тёмная</option>
+          </select>
+        </label>
+        <button id="installBtn" class="ghost" hidden>Установить</button>
+      </div>
     </header>
 
     <main class="layout">
@@ -81,6 +89,21 @@
               <div class="pie-wrap">
                 <canvas id="periodChart" width="260" height="260" aria-label="Круговая диаграмма доходов и расходов"></canvas>
                 <p id="chartCaption" class="chart-caption"></p>
+              </div>
+            </div>
+            <button id="toggleAdvancedStatsBtn" type="button" class="ghost details-btn" aria-expanded="false">Подробнее</button>
+            <div id="advancedStats" class="advanced-stats" hidden>
+              <div class="advanced-grid">
+                <div class="pie-wrap">
+                  <h4>Доходы по категориям</h4>
+                  <canvas id="incomeCategoryChart" width="220" height="220" aria-label="Круговая диаграмма доходов по категориям"></canvas>
+                  <p id="incomeCategoryCaption" class="chart-caption"></p>
+                </div>
+                <div class="pie-wrap">
+                  <h4>Расходы по категориям</h4>
+                  <canvas id="expenseCategoryChart" width="220" height="220" aria-label="Круговая диаграмма расходов по категориям"></canvas>
+                  <p id="expenseCategoryCaption" class="chart-caption"></p>
+                </div>
               </div>
             </div>
           </div>

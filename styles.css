@@ -111,14 +111,27 @@ button.ghost { background: transparent; border: 1px solid var(--muted); color: v
   gap: 0.8rem;
   align-items: center;
 }
-
 .stats-table {
-  min-width: 0;
+  width: 100%;
+  table-layout: fixed;
 }
 
+.stats-table th:first-child,
+.stats-table td:first-child {
+  width: 60%;
+}
+
+.stats-table th:last-child,
 .stats-table td:last-child {
+  width: 40%;
   text-align: right;
   font-weight: 700;
+}
+
+.stats-table td {
+  height: 40px;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .net-row.positive td:last-child { color: var(--accent); }
